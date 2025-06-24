@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'catalog_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -55,7 +56,14 @@ class _LoginScreenState extends State<LoginScreen>
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                onPressed: () {},
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const CatalogScreen(),
+                    ),
+                  );
+                },
                 child: const Text('Iniciar Sesión'),
               ),
             ),
