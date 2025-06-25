@@ -1,19 +1,47 @@
 import 'package:flutter/material.dart';
+import 'package:paycar_app/presentation/screens/shopping';
 
-class CatalogScreen extends StatelessWidget {
+class CatalogScreen extends StatefulWidget {
   const CatalogScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final List<Map<String, String>> products = [
-      {'title': 'Libro de Arquitectura', 'price': 'S/ 45.00'},
-      {'title': 'Arte y Diseño Moderno', 'price': 'S/ 60.00'},
-      {'title': 'Historia del Perú', 'price': 'S/ 30.00'},
-      {'title': 'Cómic Ilustrado', 'price': 'S/ 25.00'},
-    ];
+  State<CatalogScreen> createState() => _CatalogScreenState();
+}
 
+class _CatalogScreenState extends State<CatalogScreen> {
+  final List<Map<String, String>> cart = [];
+  final List<Map<String, String>> products = [
+    {'title': 'Libro de Arquitectura', 'price': 'S/ 45.00'},
+    {'title': 'Arte y Diseño Moderno', 'price': 'S/ 60.00'},
+    {'title': 'Historia del Perú', 'price': 'S/ 30.00'},
+    {'title': 'Cómic Ilustrado', 'price': 'S/ 25.00'},
+  ];
+  void addtocart(Map<String, String> product) {
+    setState(() {
+      cart.add(product);
+    });
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('"${product['title']}" agregando al carrito')),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Catálogo')),
+      appBar: AppBar(
+        title: const Text('Catálogo'),
+        actions: [
+          IconButton(
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => CarShop(carts: cart)),
+              );
+            },
+            icon: const Icon(Icons.shopping_cart),
+          ),
+        ],
+      ),
       body: ListView.builder(
         itemCount: products.length,
         itemBuilder: (context, index) {
@@ -26,9 +54,9 @@ class CatalogScreen extends StatelessWidget {
               subtitle: Text(product['price']!),
               trailing: IconButton(
                 icon: const Icon(Icons.add_shopping_cart),
-                onPressed: () {
-                  // Aquí podrías añadir lógica para agregar al carrito
-                },
+                onPressed: () => addtocart(product),
+
+                // Aquí podrías añadir lógica para agregar al carrito
               ),
             ),
           );

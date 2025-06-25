@@ -1,0 +1,36 @@
+import 'package:flutter/material.dart';
+
+class CarShop extends StatelessWidget {
+  final List<Map<String, String>> carts;
+
+  const CarShop({super.key, required this.carts});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Carrito'),
+        backgroundColor: const Color.fromARGB(255, 183, 212, 236),
+        actions: [
+          IconButton(
+            onPressed: () {},
+            icon: Image.asset('lib/assets/icon.png'),
+          ),
+        ],
+      ),
+      body: carts.isEmpty
+          ? const Center(child: Text('Carrito de compras'))
+          : ListView.builder(
+              itemCount: carts.length,
+              itemBuilder: (context, index) {
+                final item = carts[index];
+                return ListTile(
+                  leading: const Icon(Icons.bookmark),
+                  title: Text(item['title']!),
+                  subtitle: Text(item['price']!),
+                );
+              },
+            ),
+    );
+  }
+}
