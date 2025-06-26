@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'cart_screen.dart';
 
 class CatalogScreen extends StatelessWidget {
   const CatalogScreen({super.key});
@@ -9,12 +10,12 @@ class CatalogScreen extends StatelessWidget {
       {
         'title': 'Cartulina Opalina A4 180 Gr. x 25 Hojas',
         'price': 'S/9.00',
-        'image': 'assets/opalina.png',
+        'image': 'lib/assets/opalina.png',
       },
       {
-        'title': 'Block cartulina de colores arcoíris A4 x 20 hojas Justus',
+        'title': 'Block cartulina de colores arcoíris A4 × 20 hojas Justus',
         'price': 'S/9.00',
-        'image': 'assets/arcoiris.png',
+        'image': 'lib/assets/arcoiris.png',
       },
     ];
 
@@ -27,7 +28,7 @@ class CatalogScreen extends StatelessWidget {
         actions: [
           Padding(
             padding: const EdgeInsets.only(right: 16.0),
-            child: Image.asset('assets/logo.png', height: 32),
+            child: Image.asset('lib/assets/icon.png', height: 32),
           ),
         ],
       ),
@@ -113,6 +114,30 @@ class CatalogScreen extends StatelessWidget {
                     ),
                   );
                 },
+              ),
+            ),
+            const SizedBox(height: 10),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.green,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const CartScreen()),
+                  );
+                },
+                child: const Text(
+                  'Ver Carrito',
+                  style: TextStyle(fontSize: 16),
+                ),
               ),
             ),
           ],
