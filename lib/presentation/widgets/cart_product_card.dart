@@ -1,6 +1,7 @@
 // lib/presentation/widgets/cart_product_card.dart
 import 'package:flutter/material.dart';
 import 'package:paycar_app/services/product_service.dart';
+import 'package:paycar_app/services/cart_service.dart';
 
 class CartProductCard extends StatefulWidget {
   final MapEntry<String, dynamic> entry;
@@ -18,6 +19,8 @@ class CartProductCard extends StatefulWidget {
 
 class _CartProductCardState extends State<CartProductCard> {
   final _productService = ProductService();
+  final _cartService = CartService();
+
   Map<String, dynamic> _producto = {};
   bool _loading = true;
   int _cantidad = 1;
@@ -43,6 +46,14 @@ class _CartProductCardState extends State<CartProductCard> {
     widget.onCantidadCambiada(nuevaCantidad);
   }
 
+  void _eliminarProducto() async {
+    await _cartService.eliminarProducto(widget.entry.key);
+    // Llamamos a setState en el padre para que se recargue
+    if (mounted) {
+      widget.onCantidadCambiada(-1); // Señal para que recargue
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_loading) {
@@ -56,48 +67,84 @@ class _CartProductCardState extends State<CartProductCard> {
 
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      child: Padding(
-        padding: const EdgeInsets.all(12.0),
-        child: Row(
-          children: [
-            imagen.isNotEmpty
-                ? Image.network(
-                  imagen,
-                  width: 60,
-                  height: 60,
-                  fit: BoxFit.cover,
-                )
-                : const Icon(Icons.image_not_supported, size: 60),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    nombre,
-                    style: const TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 4),
-                  Text('Precio: S/ ${precio.toStringAsFixed(2)}'),
-                  Text('Total: S/ ${total.toStringAsFixed(2)}'),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      IconButton(
-                        icon: const Icon(Icons.remove_circle_outline),
-                        onPressed: () => _cambiarCantidad(_cantidad - 1),
+      child: SizedBox(
+        height: 180,
+        child: Padding(
+          padding: const EdgeInsets.all(12.0),
+          child: Row(
+            children: [
+              // Imagen del producto
+              imagen.isNotEmpty
+                  ? Image.network(
+                    imagen,
+                    width: 100,
+                    height: 100,
+                    fit: BoxFit.cover,
+                  )
+                  : const Icon(Icons.image_not_supported, size: 100),
+
+              const SizedBox(width: 12),
+
+              // Contenido de texto
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Nombre del producto
+                    Text(
+                      nombre,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
                       ),
-                      Text('$_cantidad'),
-                      IconButton(
-                        icon: const Icon(Icons.add_circle_outline),
-                        onPressed: () => _cambiarCantidad(_cantidad + 1),
-                      ),
-                    ],
-                  ),
-                ],
+                    ),
+                    const SizedBox(height: 8),
+
+                    // Precios
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text('P/U: S/ ${precio.toStringAsFixed(2)}'),
+                        Text('Total: S/ ${total.toStringAsFixed(2)}'),
+                      ],
+                    ),
+
+                    const SizedBox(height: 12),
+
+                    // Controles de cantidad y eliminar
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Row(
+                          children: [
+                            IconButton(
+                              icon: const Icon(Icons.remove_circle_outline),
+                              onPressed: () => _cambiarCantidad(_cantidad - 1),
+                            ),
+                            Text('$_cantidad'),
+                            IconButton(
+                              icon: const Icon(Icons.add_circle_outline),
+                              onPressed: () => _cambiarCantidad(_cantidad + 1),
+                            ),
+                          ],
+                        ),
+                        IconButton(
+                          icon: const Icon(
+                            Icons.delete_forever,
+                            color: Colors.red,
+                          ),
+                          onPressed: _eliminarProducto,
+                          tooltip: 'Eliminar',
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

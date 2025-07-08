@@ -1,4 +1,3 @@
-// lib/presentation/screens/cart_screen.dart
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -13,11 +12,10 @@ class CartScreen extends StatefulWidget {
 }
 
 class _CartScreenState extends State<CartScreen> {
+  final _cartService = CartService();
   Map<String, dynamic> _detalle = {};
   double _total = 0.0;
   bool _loading = true;
-
-  final _cartService = CartService();
 
   @override
   void initState() {
@@ -27,9 +25,27 @@ class _CartScreenState extends State<CartScreen> {
 
   Future<void> _loadCarrito() async {
     final compra = await _cartService.obtenerCarritoTemporal();
+    final rawDetalle = compra['detalleCompra'];
+    final detalle =
+        rawDetalle != null
+            ? Map<String, dynamic>.from(rawDetalle)
+            : <String, dynamic>{};
+
+    double total = 0.0;
+
+    for (final entry in detalle.entries) {
+      final codigo = entry.key;
+      final cantidad = entry.value['cantidad'] ?? 0;
+
+      final producto = await _cartService.getProductoPorCodigo(codigo);
+      final precio = double.tryParse('${producto['precio'] ?? 0}') ?? 0.0;
+
+      total += cantidad * precio;
+    }
+
     setState(() {
-      _detalle = compra['detalleCompra'] ?? {};
-      _total = (compra['totalCompra'] ?? 0).toDouble();
+      _detalle = detalle;
+      _total = total;
       _loading = false;
     });
   }
@@ -71,13 +87,33 @@ class _CartScreenState extends State<CartScreen> {
                       children:
                           _detalle.entries.map((entry) {
                             return CartProductCard(
+                              key: ValueKey(entry.key),
                               entry: entry,
                               onCantidadCambiada: (nuevaCantidad) async {
-                                await _cartService.actualizarCantidad(
-                                  entry.key,
-                                  nuevaCantidad,
-                                );
-                                _loadCarrito();
+                                if (nuevaCantidad == -1) {
+                                  await _loadCarrito();
+                                } else {
+                                  await _cartService.actualizarCantidad(
+                                    entry.key,
+                                    nuevaCantidad,
+                                  );
+                                  await _loadCarrito();
+                                }
+
+                                // 🔁 Verifica si ya no hay productos y redirige
+                                if (_detalle.isEmpty && mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text(
+                                        'Carrito vacío. Redirigiendo al catálogo...',
+                                      ),
+                                    ),
+                                  );
+                                  await Future.delayed(
+                                    const Duration(milliseconds: 800),
+                                  );
+                                  context.go('/catalogo');
+                                }
                               },
                             );
                           }).toList(),
@@ -100,11 +136,8 @@ class _CartScreenState extends State<CartScreen> {
                         ElevatedButton(
                           onPressed: () async {
                             await _cartService.finalizarCompra();
-                            if (mounted) {
-                              context.go('/gracias');
-                            }
+                            if (mounted) context.go('/gracias');
                           },
-
                           child: const Text('Procesar Compra'),
                         ),
                       ],

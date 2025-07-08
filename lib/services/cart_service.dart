@@ -132,4 +132,26 @@ class CartService {
     }
     return {};
   }
+
+  Future<void> eliminarProducto(String codigoProducto) async {
+    final carrito = await obtenerCarritoTemporal();
+    carrito['detalleCompra']?.remove(codigoProducto);
+
+    final detalle = carrito['detalleCompra'] ?? {};
+    double nuevoTotal = 0.0;
+
+    for (var entry in detalle.entries) {
+      final producto = await getProductoPorCodigo(entry.key);
+      final precio = double.tryParse('${producto['precio']}') ?? 0.0;
+      final cantidad = entry.value['cantidad'] ?? 1;
+      nuevoTotal += precio * cantidad;
+    }
+
+    carrito['totalCompra'] = nuevoTotal;
+    await _guardarCarrito(carrito);
+  }
+
+  Future<void> _guardarCarrito(Map<String, dynamic> carrito) async {
+    await _dio.put('$baseUrl/compras/compra_temporal.json', data: carrito);
+  }
 }
