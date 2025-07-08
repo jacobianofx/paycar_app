@@ -23,4 +23,12 @@ class ProductService {
 
     return productos;
   }
+
+  Future<Map<String, dynamic>> getProductoPorCodigo(String codigo) async {
+    final response = await _dio.get('$baseUrl/producto/$codigo.json');
+    if (response.statusCode == 200 && response.data != null) {
+      return Map<String, dynamic>.from(response.data);
+    }
+    return {};
+  }
 }

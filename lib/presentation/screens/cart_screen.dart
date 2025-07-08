@@ -1,4 +1,9 @@
+// lib/presentation/screens/cart_screen.dart
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:paycar_app/services/cart_service.dart';
+import '../widgets/cart_product_card.dart';
 
 class CartScreen extends StatefulWidget {
   const CartScreen({super.key});
@@ -8,159 +13,104 @@ class CartScreen extends StatefulWidget {
 }
 
 class _CartScreenState extends State<CartScreen> {
-  final List<Map<String, dynamic>> cartItems = [
-    {
-      'title': 'Cartulina Opalina A4 180 Gr. x 25 Hojas',
-      'price': 9.0,
-      'quantity': 1,
-      'image': 'lib/assets/opalina.png',
-    },
-    {
-      'title': 'Cartulina Arcoíris A4 x 20 hojas Justus',
-      'price': 9.0,
-      'quantity': 1,
-      'image': 'lib/assets/arcoiris.png',
-    },
-  ];
+  Map<String, dynamic> _detalle = {};
+  double _total = 0.0;
+  bool _loading = true;
 
-  void updateQuantity(int index, int change) {
+  final _cartService = CartService();
+
+  @override
+  void initState() {
+    super.initState();
+    _loadCarrito();
+  }
+
+  Future<void> _loadCarrito() async {
+    final compra = await _cartService.obtenerCarritoTemporal();
     setState(() {
-      final newQty = cartItems[index]['quantity'] + change;
-      if (newQty > 0) {
-        cartItems[index]['quantity'] = newQty;
-      }
+      _detalle = compra['detalleCompra'] ?? {};
+      _total = (compra['totalCompra'] ?? 0).toDouble();
+      _loading = false;
     });
   }
 
-  double get total => cartItems.fold(
-    0,
-    (sum, item) => sum + (item['price'] * item['quantity']),
-  );
+  Future<void> _logout() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.clear();
+    await _cartService.borrarCarrito();
+    context.go('/');
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
-          'Compras',
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
+        title: const Text('Carrito de Compras'),
         actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 16.0),
-            child: Image.asset('lib/assets/icon.png', height: 32),
+          IconButton(
+            icon: const Icon(Icons.store),
+            tooltip: 'Seguir comprando',
+            onPressed: () => context.go('/catalogo'),
+          ),
+          IconButton(
+            icon: const Icon(Icons.logout),
+            tooltip: 'Cerrar sesión',
+            onPressed: _logout,
           ),
         ],
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(12.0),
-        child: Column(
-          children: [
-            Expanded(
-              child: ListView.builder(
-                itemCount: cartItems.length,
-                itemBuilder: (context, index) {
-                  final item = cartItems[index];
-                  return Card(
-                    margin: const EdgeInsets.symmetric(vertical: 8),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+      body:
+          _loading
+              ? const Center(child: CircularProgressIndicator())
+              : _detalle.isEmpty
+              ? const Center(child: Text('Tu carrito está vacío'))
+              : Column(
+                children: [
+                  Expanded(
+                    child: ListView(
+                      children:
+                          _detalle.entries.map((entry) {
+                            return CartProductCard(
+                              entry: entry,
+                              onCantidadCambiada: (nuevaCantidad) async {
+                                await _cartService.actualizarCantidad(
+                                  entry.key,
+                                  nuevaCantidad,
+                                );
+                                _loadCarrito();
+                              },
+                            );
+                          }).toList(),
                     ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(12),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Image.asset(item['image'], width: 60, height: 60),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Text(
-                                  item['title'],
-                                  style: const TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                              ),
-                            ],
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Text(
+                          'Total: S/ ${_total.toStringAsFixed(2)}',
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
                           ),
-                          const SizedBox(height: 12),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Row(
-                                children: [
-                                  const Text('Cantidad'),
-                                  const SizedBox(width: 8),
-                                  IconButton(
-                                    onPressed: () => updateQuantity(index, -1),
-                                    icon: const Icon(
-                                      Icons.remove_circle_outline,
-                                    ),
-                                  ),
-                                  Text(
-                                    '${item['quantity']}',
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                  IconButton(
-                                    onPressed: () => updateQuantity(index, 1),
-                                    icon: const Icon(Icons.add_circle_outline),
-                                  ),
-                                ],
-                              ),
-                              Row(
-                                children: [
-                                  Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      const Text('Precio U.'),
-                                      Text(
-                                        'S/ ${item['price'].toStringAsFixed(2)}',
-                                      ),
-                                    ],
-                                  ),
-                                  const SizedBox(width: 20),
-                                  Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      const Text('Precio T.'),
-                                      Text(
-                                        'S/ ${(item['price'] * item['quantity']).toStringAsFixed(2)}',
-                                      ),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
+                          textAlign: TextAlign.right,
+                        ),
+                        const SizedBox(height: 12),
+                        ElevatedButton(
+                          onPressed: () {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Compra procesada')),
+                            );
+                            // TODO: marcar compra como finalizada
+                          },
+                          child: const Text('Procesar Compra'),
+                        ),
+                      ],
                     ),
-                  );
-                },
+                  ),
+                ],
               ),
-            ),
-            Text(
-              'Total Carrito S/ ${total.toStringAsFixed(2)}',
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 12),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () {},
-                child: const Text('Procesar compra'),
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 }
