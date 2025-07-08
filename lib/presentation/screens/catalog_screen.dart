@@ -1,144 +1,113 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:paycar_app/services/cart_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
-class CatalogScreen extends StatelessWidget {
+import '../../services/product_service.dart';
+import '../widgets/product_card.dart';
+import '../widgets/primary_button.dart';
+
+class CatalogScreen extends StatefulWidget {
   const CatalogScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final List<Map<String, String>> products = [
-      {
-        'title': 'Cartulina Opalina A4 180 Gr. x 25 Hojas',
-        'price': 'S/9.00',
-        'image': 'lib/assets/opalina.png',
-      },
-      {
-        'title': 'Block cartulina de colores arcoíris A4 × 20 hojas Justus',
-        'price': 'S/9.00',
-        'image': 'lib/assets/arcoiris.png',
-      },
-    ];
+  State<CatalogScreen> createState() => _CatalogScreenState();
+}
 
+class _CatalogScreenState extends State<CatalogScreen> {
+  String username = '';
+  final ProductService _productService = ProductService();
+  List<Map<String, dynamic>> _products = [];
+  bool _loading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _initScreen();
+  }
+
+  Future<void> _initScreen() async {
+    await Future.wait([_loadUsername(), _loadProducts()]);
+  }
+
+  Future<void> _loadUsername() async {
+    final prefs = await SharedPreferences.getInstance();
+    final email = prefs.getString('user_email') ?? '';
+    final name = email.split('@').first;
+    setState(() {
+      username =
+          name.isNotEmpty
+              ? name[0].toUpperCase() + name.substring(1)
+              : 'Invitado';
+    });
+  }
+
+  Future<void> _loadProducts() async {
+    try {
+      final fetched = await _productService.fetchProducts();
+      setState(() {
+        _products = fetched;
+        _loading = false;
+      });
+    } catch (e) {
+      setState(() => _loading = false);
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error al cargar productos: $e')));
+    }
+  }
+
+  Future<void> _logout() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.clear();
+
+    final cartService = CartService();
+    await cartService.borrarCarrito(); // 👈 Esto es clave
+
+    context.go('/');
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
-          'Productos',
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
+        title: Text('Productos  [Bienvenido $username]'),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.logout),
+            tooltip: 'Cerrar sesión',
+            onPressed: _logout,
+          ),
           Padding(
-            padding: const EdgeInsets.only(right: 16.0),
+            padding: const EdgeInsets.only(right: 12.0),
             child: Image.asset('lib/assets/icon.png', height: 32),
           ),
         ],
       ),
       body: Padding(
         padding: const EdgeInsets.all(8.0),
-        child: Column(
-          children: [
-            TextField(
-              decoration: InputDecoration(
-                hintText: 'Busqueda',
-                prefixIcon: const Icon(Icons.search),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-            ),
-            const SizedBox(height: 10),
-            Expanded(
-              child: ListView.builder(
-                itemCount: products.length,
-                itemBuilder: (context, index) {
-                  final product = products[index];
-                  return Card(
-                    margin: const EdgeInsets.symmetric(vertical: 8),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(12.0),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Image.asset(
-                            product['image']!,
-                            width: 80,
-                            height: 80,
-                            fit: BoxFit.contain,
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  product['title']!,
-                                  style: const TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                                const SizedBox(height: 12),
-                                Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Text(
-                                      product['price']!,
-                                      style: const TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                    ElevatedButton(
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: Colors.green[100],
-                                        foregroundColor: Colors.green[900],
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(
-                                            8,
-                                          ),
-                                        ),
-                                      ),
-                                      onPressed: () {},
-                                      child: const Text('Agrega al Carrito'),
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
+        child:
+            _loading
+                ? const Center(child: CircularProgressIndicator())
+                : Column(
+                  children: [
+                    Expanded(
+                      child: ListView.builder(
+                        itemCount: _products.length,
+                        itemBuilder: (context, index) {
+                          final product = _products[index];
+                          return ProductCard(product: product);
+                        },
                       ),
                     ),
-                  );
-                },
-              ),
-            ),
-            const SizedBox(height: 10),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.green,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
+                    const SizedBox(height: 10),
+                    PrimaryButton(
+                      text: 'Ver Carrito',
+                      onPressed: () => context.go('/carrito'),
+                      color: Colors.green,
+                    ),
+                  ],
                 ),
-                onPressed: () {
-                  context.go('/carrito');
-                },
-                child: const Text(
-                  'Ver Carrito',
-                  style: TextStyle(fontSize: 16),
-                ),
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }

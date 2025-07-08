@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'config/theme/app_theme.dart';
 import 'presentation/screens/login_screen.dart';
 import 'presentation/screens/catalog_screen.dart';
 import 'presentation/screens/cart_screen.dart';
@@ -27,7 +28,7 @@ class PaycarApp extends StatelessWidget {
     return MaterialApp.router(
       routerConfig: _router,
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(primarySwatch: Colors.blue),
+      theme: AppTheme.lightTheme,
     );
   }
 }
