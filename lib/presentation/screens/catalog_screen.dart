@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'cart_screen.dart';
+import 'package:go_router/go_router.dart';
 
 class CatalogScreen extends StatelessWidget {
   const CatalogScreen({super.key});
@@ -129,10 +129,7 @@ class CatalogScreen extends StatelessWidget {
                   ),
                 ),
                 onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => const CartScreen()),
-                  );
+                  context.go('/carrito');
                 },
                 child: const Text(
                   'Ver Carrito',
