@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:paycar_app/presentation/screens/thanks_screen.dart';
 import 'config/theme/app_theme.dart';
 import 'presentation/screens/login_screen.dart';
 import 'presentation/screens/catalog_screen.dart';
@@ -17,6 +18,10 @@ final GoRouter _router = GoRouter(
       builder: (context, state) => const CatalogScreen(),
     ),
     GoRoute(path: '/carrito', builder: (context, state) => const CartScreen()),
+    GoRoute(
+      path: '/gracias',
+      builder: (context, state) => const ThanksScreen(),
+    ),
   ],
 );
 

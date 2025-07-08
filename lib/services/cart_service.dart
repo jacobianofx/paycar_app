@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class CartService {
   final Dio _dio = Dio();
@@ -79,6 +80,52 @@ class CartService {
   }
 
   Future<Map<String, dynamic>> getProductoPorCodigo(String codigo) async {
+    final response = await _dio.get('$baseUrl/producto/$codigo.json');
+    if (response.statusCode == 200 && response.data != null) {
+      return Map<String, dynamic>.from(response.data);
+    }
+    return {};
+  }
+
+  Future<void> finalizarCompra() async {
+    final prefs = await SharedPreferences.getInstance();
+    final email = prefs.getString('user_email') ?? 'desconocido';
+
+    final compra = await obtenerCarritoTemporal();
+    if (compra.isEmpty) return;
+
+    // Clona el detalle y agrega precio real a cada ítem
+    final Map<String, dynamic> detalle = Map<String, dynamic>.from(
+      compra['detalleCompra'],
+    );
+    final updatedDetalle = <String, dynamic>{};
+
+    for (final codigo in detalle.keys) {
+      final producto = await getProductoDesdeCatalogo(codigo);
+      updatedDetalle[codigo] = {
+        'cantidad': detalle[codigo]['cantidad'],
+        'precio_unitario': producto['precio'] ?? 0,
+        'nombre': producto['nombre'] ?? '',
+      };
+    }
+
+    final compraFinal = {
+      'usuario': email,
+      'fecha': DateTime.now().toIso8601String(),
+      'detalleCompra': updatedDetalle,
+      'totalCompra': compra['totalCompra'],
+    };
+
+    final timestamp = DateTime.now().millisecondsSinceEpoch;
+    await _dio.put(
+      '$baseUrl/compras_finalizadas/$timestamp.json',
+      data: compraFinal,
+    );
+
+    await borrarCarrito();
+  }
+
+  Future<Map<String, dynamic>> getProductoDesdeCatalogo(String codigo) async {
     final response = await _dio.get('$baseUrl/producto/$codigo.json');
     if (response.statusCode == 200 && response.data != null) {
       return Map<String, dynamic>.from(response.data);

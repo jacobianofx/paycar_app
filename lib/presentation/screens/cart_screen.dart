@@ -98,12 +98,13 @@ class _CartScreenState extends State<CartScreen> {
                         ),
                         const SizedBox(height: 12),
                         ElevatedButton(
-                          onPressed: () {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Compra procesada')),
-                            );
-                            // TODO: marcar compra como finalizada
+                          onPressed: () async {
+                            await _cartService.finalizarCompra();
+                            if (mounted) {
+                              context.go('/gracias');
+                            }
                           },
+
                           child: const Text('Procesar Compra'),
                         ),
                       ],

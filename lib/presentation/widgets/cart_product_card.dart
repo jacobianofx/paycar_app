@@ -31,7 +31,6 @@ class _CartProductCardState extends State<CartProductCard> {
 
   Future<void> _loadProduct() async {
     final data = await _productService.getProductoPorCodigo(widget.entry.key);
-    print('Producto cargado: $data');
     setState(() {
       _producto = data;
       _loading = false;
