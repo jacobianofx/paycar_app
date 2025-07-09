@@ -15,7 +15,7 @@ class ThanksScreen extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               const Text(
-                '¡Gracias por su preferencia!',
+                '¡Gracias por tu compra!',
                 style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
                 textAlign: TextAlign.center,
               ),
